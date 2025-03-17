@@ -12,6 +12,8 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const graphqlResolver = require('./graphql/resolvers');
 const graphqlSchema = require('./graphql/schema');
 
+const { ruruHTML } = require('ruru/server');
+
 const feedRoutes = require('./routes/feed.route');
 const authRoutes = require('./routes/auth.route');
 
@@ -56,13 +58,28 @@ app.use((req, res, next) => {
 app.use('/feed', feedRoutes);
 app.use('/auth', authRoutes);
 
-app.use(
-  '/graphql',
+app.use('/graphql', (req, res) =>
   createHandler({
     schema: graphqlSchema,
     rootValue: graphqlResolver,
-  })
+    context: { req, res },
+    formatError(err) {
+      if (!err.originalError) {
+        return err;
+      }
+      const data = err.originalError.data;
+      const message = err.message || 'An error occurred';
+      const code = err.originalError.code || 500;
+      return { message, data, status: code };
+    },
+  })(req, res)
 );
+
+// Serve the GraphiQL IDE.
+app.get('/ruru', (_req, res) => {
+  res.type('html');
+  res.end(ruruHTML({ endpoint: '/graphql' }));
+});
 
 app.use((error, req, res, next) => {
   console.log(error);
