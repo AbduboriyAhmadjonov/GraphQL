@@ -130,15 +130,11 @@ class App extends Component {
         return res.json();
       })
       .then((resData) => {
-        if (resData.errors.status === 422) {
+        if (resData.errors && resData.errors.status === 422) {
           throw new Error("Validation failed. Make sure the email address isn't used yet!");
         }
-        if (resData.errors.status !== 200 && resData.errors.status !== 201) {
-          console.log('Error!');
-          throw new Error('Creating a user failed!');
-        }
         if (resData.errors) {
-          throw new Error('User creation failed!');
+          throw new Error('User creation failed.');
         }
         console.log(resData);
         this.setState({ isAuth: false, authLoading: false });
