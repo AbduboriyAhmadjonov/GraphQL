@@ -15,7 +15,7 @@ const graphqlSchema = require('./graphql/schema');
 const { ruruHTML } = require('ruru/server');
 
 const feedRoutes = require('./routes/feed.route');
-const authRoutes = require('./routes/auth.route');
+const auth = require('./middleware/auth');
 
 const app = express();
 
@@ -58,8 +58,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/feed', feedRoutes);
-app.use('/auth', authRoutes);
+app.use(auth);
 
 app.use('/graphql', (req, res) =>
   createHandler({
