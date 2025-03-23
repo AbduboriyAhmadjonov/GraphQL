@@ -1,6 +1,7 @@
 // https://codepen.io/Abduboriy/pen/PwYrYvr?editors=1010
 require('dotenv').config();
 const path = require('path');
+const { clearImage } = require('./utils/file');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -9,13 +10,12 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 
 const { createHandler } = require('graphql-http/lib/use/express');
+
+const auth = require('./middleware/auth');
 const graphqlResolver = require('./graphql/resolvers');
 const graphqlSchema = require('./graphql/schema');
 
 const { ruruHTML } = require('ruru/server');
-
-const feedRoutes = require('./routes/feed.route');
-const auth = require('./middleware/auth');
 
 const app = express();
 
@@ -59,6 +59,23 @@ app.use((req, res, next) => {
 });
 
 app.use(auth);
+
+app.put('/post-image', (req, res, next) => {
+  if (!req.isAuth) {
+    throw new Error('Not authenticated!');
+  }
+  if (!req.file) {
+    return res.status(200).json({ message: 'No file provided!' });
+  }
+  if (req.body.oldPath) {
+    clearImage(req.body.oldPath);
+  }
+  return res.status(201).json({
+    message: 'File stored.',
+    /** REPLACE ALL '\' with '/' */
+    filePath: req.file.path.replace(/\\/g, '/'),
+  });
+});
 
 app.use('/graphql', (req, res) =>
   createHandler({
